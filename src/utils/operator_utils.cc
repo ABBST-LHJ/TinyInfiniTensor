@@ -1,17 +1,38 @@
 #include "utils/operator_utils.h"
 #include "core/runtime.h"
-
 namespace infini {
 
 Shape infer_broadcast(const Shape &A, const Shape &B) {
+    // =================================== 作业实现 ===================================
+    Shape broadcastedShape;
+    size_t rankA = A.size();
+    size_t rankB = B.size();
+    size_t maxRank = std::max(rankA, rankB);
 
-    // =================================== 作业 ===================================
-    // TODO：对 A 和 B 进行双向广播，返回广播后的形状。
-    // REF: https://github.com/onnx/onnx/blob/main/docs/Broadcasting.md
-    // =================================== 作业 ===================================
-    
-    return {};
+    // 从右往左对齐维度，处理每个维度的广播逻辑
+    for (size_t i = 0; i < maxRank; ++i) {
+        // 计算当前维度在 A 和 B 中的索引（从右往左）
+        size_t idxA = rankA - 1 - i;
+        size_t idxB = rankB - 1 - i;
+
+        // 获取当前维度的大小（超出张量维度范围则视为 1）
+        int dimA = (idxA < rankA) ? A[idxA] : 1;
+        int dimB = (idxB < rankB) ? B[idxB] : 1;
+
+        // 广播规则：维度大小为 1 可广播到另一维度大小，非 1 则必须相等
+        IT_ASSERT(dimA == 1 || dimB == 1 || dimA == dimB,
+                  "广播失败：维度大小不兼容（" + std::to_string(dimA) + " vs " + std::to_string(dimB) + "）");
+
+        // 广播后的维度大小取两者中的较大值（或相等值）
+        broadcastedShape.push_back(std::max(dimA, dimB));
+    }
+
+    // 由于是从右往左处理，结果需要反转回正确的维度顺序
+    std::reverse(broadcastedShape.begin(), broadcastedShape.end());
+    return broadcastedShape;
+    // =================================== 作业实现 ===================================
 }
+
 
 int get_real_axis(const int &axis, const int &rank) {
     IT_ASSERT(rank >= 1);

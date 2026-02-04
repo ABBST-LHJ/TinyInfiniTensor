@@ -35,11 +35,12 @@ namespace infini
 
     optional<vector<Shape>> ClipObj::inferShape(const TensorVec &inputs)
     {
-        // =================================== 作业 ===================================
-        // TODO：返回经过 clip 操作后的 shape
-        // REF: https://onnx.ai/onnx/operators/onnx__Clip.html#clip-13
-        // =================================== 作业 ===================================
-        return std::nullopt;
+        // =================================== 作业实现 ===================================
+        IT_ASSERT(!inputs.empty(), "Clip 算子必须有一个输入张量");
+        const auto inputTensor = inputs[0];
+        auto outputShape = inputTensor->getDims(); // Clip 不改变张量形状
+        return {{outputShape}}; // 返回与输入一致的形状（vector<Shape> 格式）
+        // =================================== 作业实现 ===================================
     }
 
     std::string ClipObj::toString() const
@@ -48,6 +49,10 @@ namespace infini
         os << type.toString() << "[" << getGuid() << "]";
         os << "(";
         os << vecToString(inputs[0]->getDims()) << ",";
+        if (minValue.has_value())
+            os << "min=" << *minValue << ",";
+        if (maxValue.has_value())
+            os << "max=" << *maxValue << ",";
         os << "input=" << inputs[0]->getGuid() << ",";
         os << "output=" << outputs[0]->getGuid() << ")";
         return os.str();
@@ -61,21 +66,23 @@ namespace infini
 
     vector<DataType> CastObj::inferDataType(const TensorVec &inputs) const
     {
-        // =================================== 作业 ===================================
-        // TODO：返回经过 cast 操作后, 输出 tensor 的数目和数据类型
-        // REF_FILE: src/core/operator.cc
-        // REF: https://onnx.ai/onnx/operators/onnx__Cast.html#cast-21
-        // =================================== 作业 ===================================
-        return {};
+        // =================================== 作业实现 ===================================
+        IT_ASSERT(!inputs.empty(), "Cast 算子必须有一个输入张量");
+        // 根据 CastType 获取目标数据类型（复用已实现的 getOutputDataType 方法）
+        DataType targetDtype = getOutputDataType();
+        // 返回输出张量的数据类型（vector 长度=1，对应单个输出张量）
+        return {targetDtype};
+        // =================================== 作业实现 ===================================
     }
 
     optional<vector<Shape>> CastObj::inferShape(const TensorVec &inputs)
     {
-        // =================================== 作业 ===================================
-        // TODO：返回经过 cast 操作后的 shape
-        // REF: https://onnx.ai/onnx/operators/onnx__Cast.html#cast-21
-        // =================================== 作业 ===================================
-        return std::nullopt;
+        // =================================== 作业实现 ===================================
+        IT_ASSERT(!inputs.empty(), "Cast 算子必须有一个输入张量");
+        const auto inputTensor = inputs[0];
+        auto outputShape = inputTensor->getDims(); // Cast 不改变张量形状
+        return {{outputShape}}; // 返回与输入一致的形状（vector<Shape> 格式）
+        // =================================== 作业实现 ===================================
     }
 
     std::string CastObj::toString() const
@@ -83,6 +90,10 @@ namespace infini
         std::ostringstream os;
         os << type.toString() << "[" << getGuid() << "]";
         os << "(";
+        os << vecToString(inputs[0]->getDims()) << ",";
+        os << "from=" << inputs[0]->getDType().toString() << ",";
+        os << "to=" << getOutputDataType().toString() << ",";
+        os << "input=" << inputs[0]->getGuid() << ",";
         os << "output=" << outputs[0]->getGuid() << ")";
         return os.str();
     }
